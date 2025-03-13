@@ -45,7 +45,7 @@ The dataset contains:
    jupyter notebook NHS_Delay_Analysis.ipynb
    ```
 3. **Import CSV into Power BI**:
-   - Open Power BI → Get Data → CSV → Load `nhs_powerbi_data.csv`
+   - Open Power BI → Get Data → CSV → Load `nhs_appointment_data.csv`
    - Create visualizations using **Bar, Line, Pie, and Scatter Charts**.
 
 ## 🔥 Business Impact
@@ -61,6 +61,6 @@ Feel free to **fork** this repository and enhance the project! For major changes
 
 ## 📩 Contact
 
-For queries or collaborations, connect with me on **LinkedIn**: [Your LinkedIn Profile]
+For queries or collaborations, connect with me on **LinkedIn**: www.linkedin.com/in/samiur-rahman-sssaaamm29
 
 
