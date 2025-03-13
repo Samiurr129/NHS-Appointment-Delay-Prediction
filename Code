@@ -1,0 +1,87 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from statsmodels.tsa.arima.model import ARIMA
+from fbprophet import Prophet
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error
+
+# Load Data
+nhs_data = pd.read_csv("nhs_powerbi_data.csv", parse_dates=["Date"])
+
+# Data Preprocessing
+nhs_data.dropna(inplace=True)
+nhs_data.sort_values("Date", inplace=True)
+
+# Feature Engineering
+nhs_data['Week'] = nhs_data['Date'].dt.isocalendar().week
+nhs_data['Month'] = nhs_data['Date'].dt.month
+
+# Train-Test Split
+df_train, df_test = train_test_split(nhs_data, test_size=0.2, random_state=42)
+
+# ARIMA Model
+arima_model = ARIMA(df_train['Delay_Minutes'], order=(5,1,0))
+arima_result = arima_model.fit()
+arima_forecast = arima_result.forecast(steps=len(df_test))
+
+# Prophet Model
+prophet_df = df_train[['Date', 'Delay_Minutes']].rename(columns={"Date": "ds", "Delay_Minutes": "y"})
+prophet_model = Prophet()
+prophet_model.fit(prophet_df)
+future = prophet_model.make_future_dataframe(periods=len(df_test))
+prophet_forecast = prophet_model.predict(future)
+
+# Evaluation
+arima_mae = mean_absolute_error(df_test['Delay_Minutes'], arima_forecast)
+print(f'ARIMA MAE: {arima_mae}')
+
+prophet_mae = mean_absolute_error(df_test['Delay_Minutes'], prophet_forecast['yhat'][-len(df_test):])
+print(f'Prophet MAE: {prophet_mae}')
+
+# Visualization
+plt.figure(figsize=(10, 5))
+plt.plot(df_test['Date'], df_test['Delay_Minutes'], label='Actual Delay', color='blue')
+plt.plot(df_test['Date'], arima_forecast, label='ARIMA Prediction', color='red')
+plt.legend()
+plt.title('ARIMA Forecast vs Actual Delays')
+plt.show()
+
+prophet_model.plot(prophet_forecast)
+plt.show()
+
+# Additional Visualizations
+sns.set_style("whitegrid")
+
+# 1. Bar Chart - Average Delay by Hospital Location
+plt.figure(figsize=(12, 5))
+sns.barplot(x="Hospital_Location", y="Delay_Minutes", data=nhs_data, estimator=np.mean, ci=None, palette="viridis")
+plt.xticks(rotation=45)
+plt.title("Average Appointment Delay by Hospital Location")
+plt.xlabel("Hospital Location")
+plt.ylabel("Average Delay (Minutes)")
+plt.show()
+
+# 2. Line Chart - Appointment Delays Over Time
+plt.figure(figsize=(12, 5))
+nhs_data.set_index("Date")['Delay_Minutes'].resample("W").mean().plot(linewidth=2, color="red")
+plt.title("Weekly Average Appointment Delay Over Time")
+plt.xlabel("Date")
+plt.ylabel("Average Delay (Minutes)")
+plt.show()
+
+# 3. Pie Chart - Appointment Status Distribution
+plt.figure(figsize=(6, 6))
+nhs_data["Status"].value_counts().plot.pie(autopct="%1.1f%%", colors=["green", "red", "blue"])
+plt.title("Appointment Status Distribution")
+plt.ylabel("")
+plt.show()
+
+# 4. Scatter Plot - Age vs Delay Minutes
+plt.figure(figsize=(10, 5))
+sns.scatterplot(x="Age", y="Delay_Minutes", data=nhs_data, alpha=0.5, color="blue")
+plt.title("Patient Age vs Appointment Delay")
+plt.xlabel("Patient Age")
+plt.ylabel("Delay (Minutes)")
+plt.show()
